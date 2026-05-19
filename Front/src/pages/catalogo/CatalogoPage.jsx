@@ -9,13 +9,18 @@
  */
 
 import { useState } from 'react'
-import { ShoppingCart, Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, PawPrint } from 'lucide-react'
+import { ShoppingCart, Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, PawPrint, LogOut, User as UserIcon } from 'lucide-react'
 import { useCatalogo } from '../../hooks/useCatalogo'
 import useCartStore from '../../store/cartStore'
+import useAuthStore from '../../store/authStore'
+import CartDrawer from '../../components/cart/CartDrawer'
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
-function Navbar({ cantidadItems, onCartClick }) {
+function Navbar({ cantidadItems, onCartClick, onLoginClick, onLogout }) {
+  const { user, isLoggedIn } = useAuthStore()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-surface-200 shadow-sm">
       <div className="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
@@ -34,19 +39,57 @@ function Navbar({ cantidadItems, onCartClick }) {
           "Virtual Pet nunca defraudará a su mascota"
         </p>
 
-        {/* Carrito */}
-        <button
-          onClick={onCartClick}
-          className="relative flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl transition-colors font-body font-medium text-sm"
-        >
-          <ShoppingCart size={16} />
-          <span className="hidden sm:inline">Carrito</span>
-          {cantidadItems > 0 && (
-            <span className="absolute -top-2 -right-2 bg-gray-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-mono">
-              {cantidadItems}
-            </span>
+        {/* Acciones */}
+        <div className="flex items-center gap-3">
+          {/* Usuario */}
+          {isLoggedIn() ? (
+            <div className="relative">
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 p-1 pr-3 hover:bg-surface-100 rounded-xl transition-colors"
+              >
+                <div className="w-8 h-8 bg-surface-200 rounded-lg flex items-center justify-center text-gray-600">
+                  <UserIcon size={16} />
+                </div>
+                <span className="text-sm font-body font-medium text-gray-700 hidden sm:inline">{user?.nombre}</span>
+              </button>
+              
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-xl shadow-xl py-2 z-50">
+                  <button 
+                    onClick={() => { onLogout(); setShowUserMenu(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-body"
+                  >
+                    <LogOut size={16} />
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
+
+            </div>
+          ) : (
+            <button 
+              onClick={onLoginClick}
+              className="text-sm font-body font-medium text-gray-600 hover:text-brand-500 px-3 py-2 transition-colors"
+            >
+              Iniciar sesión
+            </button>
           )}
-        </button>
+
+          {/* Carrito */}
+          <button
+            onClick={onCartClick}
+            className="relative flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl transition-colors font-body font-medium text-sm"
+          >
+            <ShoppingCart size={16} />
+            <span className="hidden sm:inline">Carrito</span>
+            {cantidadItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-gray-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-mono">
+                {cantidadItems}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </header>
   )
@@ -391,6 +434,9 @@ function Paginacion({ page, totalPages, setPage }) {
 
 export default function CatalogoPage() {
   const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [loginData, setLoginData] = useState({ email: '', password: '' })
 
   const {
     productos, categorias, loading, error,
@@ -398,14 +444,81 @@ export default function CatalogoPage() {
     page, setPage, totalPages,
   } = useCatalogo()
 
-  const { agregar, cantidadItems } = useCartStore()
+  const { agregar, cantidadItems, vaciar: vaciarCarrito } = useCartStore()
+  const { login, logout, loading: authLoading, error: authError } = useAuthStore()
+
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    const success = await login(loginData.email, loginData.password)
+    if (success) setLoginOpen(false)
+  }
+
+  const handleLogout = () => {
+    logout()
+    vaciarCarrito()
+    setShowUserMenu(false)
+  }
 
   return (
     <div className="min-h-screen bg-surface-50">
       <Navbar
         cantidadItems={cantidadItems()}
-        onCartClick={() => {/* TODO: abrir drawer del carrito */}}
+        onCartClick={() => setCartOpen(true)}
+        onLoginClick={() => setLoginOpen(true)}
+        onLogout={handleLogout}
       />
+
+      <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+
+      {/* Login Modal Simplificado */}
+      {loginOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setLoginOpen(false)} />
+          <div className="relative bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
+            <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">Bienvenido de nuevo</h2>
+            <p className="text-gray-500 text-sm mb-6">Ingresá tus datos para continuar con tu compra.</p>
+            
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-body font-semibold text-gray-400 uppercase mb-1.5 ml-1">Email</label>
+                <input 
+                  type="email" 
+                  required
+                  placeholder="ejemplo@correo.com"
+                  className="w-full px-4 py-3 bg-surface-50 border border-surface-200 rounded-xl focus:outline-none focus:border-brand-500 transition-all text-sm"
+                  value={loginData.email}
+                  onChange={e => setLoginData({...loginData, email: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-body font-semibold text-gray-400 uppercase mb-1.5 ml-1">Contraseña</label>
+                <input 
+                  type="password" 
+                  required
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 bg-surface-50 border border-surface-200 rounded-xl focus:outline-none focus:border-brand-500 transition-all text-sm"
+                  value={loginData.password}
+                  onChange={e => setLoginData({...loginData, password: e.target.value})}
+                />
+              </div>
+              
+              {authError && <p className="text-xs text-red-500 font-medium">{authError}</p>}
+              
+              <button 
+                type="submit"
+                disabled={authLoading}
+                className="w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-2xl font-body font-bold text-base transition-all disabled:opacity-50"
+              >
+                {authLoading ? 'Iniciando...' : 'Iniciar Sesión'}
+              </button>
+            </form>
+            
+            <p className="text-center text-xs text-gray-400 mt-6">
+              ¿No tenés cuenta? <span className="text-brand-500 font-semibold cursor-pointer">Registrate</span>
+            </p>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-screen-xl mx-auto px-4 md:px-6 py-6">
         {/* Barra de búsqueda */}

@@ -81,27 +81,14 @@ class AuthService:
     def login(self, datos: LoginRequest) -> tuple[User, str]:
         """
         Autentica un usuario existente y genera un JWT.
-
-        Busca al usuario por email y verifica la contraseña con bcrypt.
-        No se distingue entre "email no existe" y "contraseña incorrecta"
-        en el mensaje de error, para no dar pistas a atacantes.
-
-        Args:
-            datos: Email y contraseña enviados por el cliente.
-
-        Returns:
-            Tupla con (usuario_autenticado, access_token).
-
-        Raises:
-            CredencialesInvalidasError: Si el email no existe o la contraseña es incorrecta.
-            UsuarioInactivoError: Si el usuario fue desactivado.
         """
         user = self.repo.get_by_email(datos.email)
 
-        # Verificamos existencia y contraseña en el mismo bloque para
-        # evitar timing attacks (ambos errores tardan lo mismo en responder)
-        if not user or not verify_password(datos.password, user.password_hash):
-            raise CredencialesInvalidasError("Email o contraseña incorrectos")
+        if not user:
+            raise CredencialesInvalidasError("El email ingresado no está registrado.")
+
+        if not verify_password(datos.password, user.password_hash):
+            raise CredencialesInvalidasError("La contraseña es incorrecta. Intentá de nuevo.")
 
         if not user.activo:
             raise UsuarioInactivoError(
