@@ -436,7 +436,13 @@ export default function CatalogoPage() {
   const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
-  const [loginData, setLoginData] = useState({ email: '', password: '' })
+  const [isRegister, setIsRegister] = useState(false)
+  const [authData, setAuthData] = useState({ 
+    email: '', 
+    password: '',
+    nombre: '',
+    apellido: ''
+  })
 
   const {
     productos, categorias, loading, error,
@@ -445,18 +451,28 @@ export default function CatalogoPage() {
   } = useCatalogo()
 
   const { agregar, cantidadItems, vaciar: vaciarCarrito } = useCartStore()
-  const { login, logout, loading: authLoading, error: authError } = useAuthStore()
+  const { login, register, logout, loading: authLoading, error: authError } = useAuthStore()
 
-  const handleLogin = async (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault()
-    const success = await login(loginData.email, loginData.password)
-    if (success) setLoginOpen(false)
+    let success = false
+    
+    if (isRegister) {
+      success = await register(authData.nombre, authData.apellido, authData.email, authData.password)
+    } else {
+      success = await login(authData.email, authData.password)
+    }
+    
+    if (success) {
+      setLoginOpen(false)
+      setIsRegister(false)
+      setAuthData({ email: '', password: '', nombre: '', apellido: '' })
+    }
   }
 
   const handleLogout = () => {
     logout()
     vaciarCarrito()
-    setShowUserMenu(false)
   }
 
   return (
@@ -470,15 +486,46 @@ export default function CatalogoPage() {
 
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
 
-      {/* Login Modal Simplificado */}
+      {/* Auth Modal */}
       {loginOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setLoginOpen(false)} />
           <div className="relative bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">Bienvenido de nuevo</h2>
-            <p className="text-gray-500 text-sm mb-6">Ingresá tus datos para continuar con tu compra.</p>
+            <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">
+              {isRegister ? 'Crear cuenta' : 'Bienvenido de nuevo'}
+            </h2>
+            <p className="text-gray-500 text-sm mb-6">
+              {isRegister ? 'Completá tus datos para unirte.' : 'Ingresá tus datos para continuar con tu compra.'}
+            </p>
             
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-4">
+              {isRegister && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-body font-semibold text-gray-400 uppercase mb-1.5 ml-1">Nombre</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Juan"
+                      className="w-full px-4 py-3 bg-surface-50 border border-surface-200 rounded-xl focus:outline-none focus:border-brand-500 transition-all text-sm"
+                      value={authData.nombre}
+                      onChange={e => setAuthData({...authData, nombre: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-body font-semibold text-gray-400 uppercase mb-1.5 ml-1">Apellido</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Pérez"
+                      className="w-full px-4 py-3 bg-surface-50 border border-surface-200 rounded-xl focus:outline-none focus:border-brand-500 transition-all text-sm"
+                      value={authData.apellido}
+                      onChange={e => setAuthData({...authData, apellido: e.target.value})}
+                    />
+                  </div>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-xs font-body font-semibold text-gray-400 uppercase mb-1.5 ml-1">Email</label>
                 <input 
@@ -486,8 +533,8 @@ export default function CatalogoPage() {
                   required
                   placeholder="ejemplo@correo.com"
                   className="w-full px-4 py-3 bg-surface-50 border border-surface-200 rounded-xl focus:outline-none focus:border-brand-500 transition-all text-sm"
-                  value={loginData.email}
-                  onChange={e => setLoginData({...loginData, email: e.target.value})}
+                  value={authData.email}
+                  onChange={e => setAuthData({...authData, email: e.target.value})}
                 />
               </div>
               <div>
@@ -497,8 +544,8 @@ export default function CatalogoPage() {
                   required
                   placeholder="••••••••"
                   className="w-full px-4 py-3 bg-surface-50 border border-surface-200 rounded-xl focus:outline-none focus:border-brand-500 transition-all text-sm"
-                  value={loginData.password}
-                  onChange={e => setLoginData({...loginData, password: e.target.value})}
+                  value={authData.password}
+                  onChange={e => setAuthData({...authData, password: e.target.value})}
                 />
               </div>
               
@@ -509,12 +556,18 @@ export default function CatalogoPage() {
                 disabled={authLoading}
                 className="w-full bg-brand-500 hover:bg-brand-600 text-white py-3.5 rounded-2xl font-body font-bold text-base transition-all disabled:opacity-50"
               >
-                {authLoading ? 'Iniciando...' : 'Iniciar Sesión'}
+                {authLoading ? 'Procesando...' : (isRegister ? 'Registrarse' : 'Iniciar Sesión')}
               </button>
             </form>
             
             <p className="text-center text-xs text-gray-400 mt-6">
-              ¿No tenés cuenta? <span className="text-brand-500 font-semibold cursor-pointer">Registrate</span>
+              {isRegister ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?'} {' '}
+              <span 
+                className="text-brand-500 font-semibold cursor-pointer"
+                onClick={() => setIsRegister(!isRegister)}
+              >
+                {isRegister ? 'Iniciá Sesión' : 'Registrate'}
+              </span>
             </p>
           </div>
         </div>
