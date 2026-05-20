@@ -23,6 +23,15 @@ export default {
           300: '#d6d3c8',
         }
       },
+      keyframes: {
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
+        }
+      },
+      animation: {
+        marquee: 'marquee 25s linear infinite',
+      },
       fontFamily: {
         display: ['"Playfair Display"', 'Georgia', 'serif'],
         body:    ['"DM Sans"', 'sans-serif'],
