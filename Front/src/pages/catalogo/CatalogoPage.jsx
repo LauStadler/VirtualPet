@@ -14,9 +14,9 @@ import { useCatalogo } from '../../hooks/useCatalogo'
 import useCartStore from '../../store/cartStore'
 import useAuthStore from '../../store/authStore'
 import CartDrawer from '../../components/cart/CartDrawer'
+import { Link } from 'react-router-dom' // <-- Asegurate de importar Link al principio del archivo
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
-
+// ─── Navbar Modificado ────────────────────────────────────────────────────────
 function Navbar({ cantidadItems, onCartClick, onLoginClick, onLogout }) {
   const { user, isLoggedIn } = useAuthStore()
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -24,24 +24,24 @@ function Navbar({ cantidadItems, onCartClick, onLoginClick, onLogout }) {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-surface-200 shadow-sm">
       <div className="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
-        {/* Logo */}
-        <div className="flex items-center gap-2 shrink-0">
+        
+        {/* Logo — Link hacia el inicio */}
+        <Link to="/" className="flex items-center gap-2 shrink-0 hover:opacity-90 transition-opacity">
           <div className="w-8 h-8 bg-brand-500 rounded-xl flex items-center justify-center">
             <PawPrint size={16} className="text-white" />
           </div>
           <span className="font-display text-xl font-bold text-gray-900">
             Virtual<span className="text-brand-500">Pet</span>
           </span>
-        </div>
+        </Link>
 
         {/* Slogan — oculto en móvil */}
         <p className="hidden md:block text-sm text-gray-400 italic font-body">
           "Virtual Pet nunca defraudará a su mascota"
         </p>
 
-        {/* Acciones */}
+        {/* Acciones (se mantiene igual...) */}
         <div className="flex items-center gap-3">
-          {/* Usuario */}
           {isLoggedIn() ? (
             <div className="relative">
               <button 
@@ -65,7 +65,6 @@ function Navbar({ cantidadItems, onCartClick, onLoginClick, onLogout }) {
                   </button>
                 </div>
               )}
-
             </div>
           ) : (
             <button 
