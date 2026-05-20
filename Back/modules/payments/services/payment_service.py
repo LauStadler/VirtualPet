@@ -14,13 +14,22 @@ Este servicio no expone endpoints HTTP. Es llamado internamente
 por OrderService durante el flujo de checkout.
 """
 
+from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
 
 from modules.payments.repositories.payment_repository import PaymentRepository
 from modules.payments.models.payment import Payment, PaymentEstado
 
 
-class PaymentService:
+class IPaymentService(ABC):
+    """Interfaz para el servicio de pagos."""
+
+    @abstractmethod
+    def procesar(self, orden_id: int, monto: float) -> Payment:
+        pass
+
+
+class PaymentService(IPaymentService):
     """Lógica de procesamiento de pagos. Actualmente simulado."""
 
     def __init__(self, db: Session) -> None:

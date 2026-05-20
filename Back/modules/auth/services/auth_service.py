@@ -9,6 +9,7 @@ Si necesitás levantar un error HTTP, lo hace el controller — este servicio
 lanza excepciones de dominio propias que el controller traduce.
 """
 
+from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
@@ -34,7 +35,27 @@ class UsuarioInactivoError(Exception):
     pass
 
 
-class AuthService:
+class IAuthService(ABC):
+    """Interfaz para el servicio de autenticación."""
+
+    @abstractmethod
+    def registrar_cliente(self, datos: RegisterRequest) -> tuple[User, str]:
+        pass
+
+    @abstractmethod
+    def login(self, datos: LoginRequest) -> tuple[User, str]:
+        pass
+
+    @abstractmethod
+    def crear_usuario_admin(self, datos: CreateUserAdminRequest) -> User:
+        pass
+
+    @abstractmethod
+    def obtener_perfil(self, user_id: int) -> User:
+        pass
+
+
+class AuthService(IAuthService):
     """Lógica de negocio para autenticación y gestión de usuarios."""
 
     def __init__(self, db: Session) -> None:

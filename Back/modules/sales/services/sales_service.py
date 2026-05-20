@@ -22,6 +22,7 @@ Decisión de diseño — stock:
     Este caso borde es aceptable para el volumen esperado de Virtual Pet.
 """
 
+from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
 
 from modules.catalog.repositories.catalog_repository import CatalogRepository
@@ -47,7 +48,15 @@ class ProductoInvalidoError(Exception):
         )
 
 
-class SalesService:
+class ISalesService(ABC):
+    """Interfaz para el servicio del proceso de checkout."""
+
+    @abstractmethod
+    def checkout(self, datos: CheckoutRequest, user_id: int) -> CheckoutResponse:
+        pass
+
+
+class SalesService(ISalesService):
     """Lógica de negocio del proceso de checkout."""
 
     def __init__(self, db: Session) -> None:
