@@ -26,7 +26,7 @@ function Navbar({ cantidadItems }) {
         <nav className="hidden md:flex items-center gap-8">
           {[
             { label: 'Inicio',       to: '/' },
-            { label: 'Tienda',       to: '/tienda' },
+            { label: 'Tienda',       to: '/catalogo' },
             { label: 'Contacto',     to: '/contacto' },
           ].map(l => (
             <Link key={l.to} to={l.to} className="text-sm font-body text-gray-600 hover:text-brand-500 transition-colors">
@@ -35,7 +35,7 @@ function Navbar({ cantidadItems }) {
           ))}
         </nav>
 
-        <Link to="/tienda" className="relative flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl transition-colors font-body font-medium text-sm">
+        <Link to="/catalogo" className="relative flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl transition-colors font-body font-medium text-sm">
           <ShoppingCart size={16} />
           <span className="hidden sm:inline">Tienda</span>
           {cantidadItems > 0 && (
@@ -56,7 +56,7 @@ function Footer() {
         <p className="mb-2">
           <Link to="/" className="hover:text-brand-400 transition-colors">Inicio</Link>
           {' · '}
-          <Link to="/tienda" className="hover:text-brand-400 transition-colors">Tienda</Link>
+          <Link to="/catalogo" className="hover:text-brand-400 transition-colors">Tienda</Link>
           {' · '}
         </p>
         <p className="text-xs text-gray-600">© {new Date().getFullYear()} Virtual Pet. Mar del Plata.</p>

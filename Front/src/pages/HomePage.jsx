@@ -75,7 +75,7 @@ function Navbar({ cantidadItems }) {
 
         {/* Carrito */}
         <Link
-          to="/tienda"
+          to="/catalogo"
           className="relative flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl transition-colors font-body font-medium text-sm"
         >
           <ShoppingCart size={16} />
@@ -178,7 +178,7 @@ function Categorias() {
         {CATEGORIAS.map(cat => (
           <Link
             key={cat.nombre}
-            to="/tienda"
+            to="/catalogo"
             className={`${cat.color} border rounded-2xl p-4 text-center hover:scale-105 transition-transform duration-200 group`}
           >
             <div className="text-4xl mb-2">{cat.emoji}</div>
@@ -267,7 +267,7 @@ function CTAFinal() {
           Explorá todo nuestro catálogo y hacé tu pedido hoy.
         </p>
         <Link
-          to="/tienda"
+          to="/catalogo"
           className="inline-flex items-center gap-2 bg-white hover:bg-surface-100 text-brand-600 font-body font-semibold px-8 py-3 rounded-xl transition-colors"
         >
           Ver tienda <ArrowRight size={16} />
@@ -306,7 +306,7 @@ function Footer() {
             <ul className="space-y-2 font-body text-sm">
               {[
                 { label: 'Inicio',       to: '/' },
-                { label: 'Tienda',       to: '/tienda' },
+                { label: 'Tienda',       to: '/catalogo' },
                 { label: 'Contacto',     to: '/contacto' },
               ].map(l => (
                 <li key={l.to}>
