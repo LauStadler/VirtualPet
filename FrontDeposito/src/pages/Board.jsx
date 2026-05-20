@@ -31,26 +31,51 @@ const Board = () => {
     fetchOrders()
   }, [])
 
-  const onDragEnd = async (result) => {
-    const { destination, source, draggableId } = result
+const onDragEnd = async (result) => {
+  const { destination, source, draggableId } = result
 
-    if (!destination) return
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return
+  // Sin destino — soltó fuera del tablero
+  if (!destination) return
 
-    const orderId = parseInt(draggableId)
-    const newState = destination.droppableId
+  // Mismo lugar exacto — no hacer nada
+  if (
+    destination.droppableId === source.droppableId &&
+    destination.index === source.index
+  ) return
 
-    const previousOrders = [...orders]
-    setOrders(orders.map(o => o.id === orderId ? { ...o, estado: newState } : o))
+  // Misma columna, distinto índice — solo reordenar visualmente, sin llamar al backend
+  if (destination.droppableId === source.droppableId) {
+    setOrders(prev => {
+      const columnOrders = prev
+        .filter(o => o.estado === source.droppableId)
+        .sort((a, b) => a._index - b._index)
 
-    try {
-      await api.patch(`/backoffice/orders/${orderId}/estado`, { estado: newState })
-    } catch (error) {
-      console.error('Error updating order state:', error)
-      alert(error.response?.data?.detail || 'No se pudo mover el pedido.')
-      setOrders(previousOrders)
-    }
+      const orderId = parseInt(draggableId)
+      const reordered = [...columnOrders]
+      const [moved] = reordered.splice(source.index, 1)
+      reordered.splice(destination.index, 0, moved)
+
+      const otherOrders = prev.filter(o => o.estado !== source.droppableId)
+      return [...otherOrders, ...reordered]
+    })
+    return  // ← sale sin llamar al backend
   }
+
+  // Columna distinta — llamar al backend para cambiar estado
+  const orderId = parseInt(draggableId)
+  const newState = destination.droppableId
+  const previousOrders = [...orders]
+
+  setOrders(orders.map(o => o.id === orderId ? { ...o, estado: newState } : o))
+
+  try {
+    await api.patch(`/backoffice/orders/${orderId}/estado`, { estado: newState })
+  } catch (error) {
+    console.error('Error updating order state:', error)
+    alert(error.response?.data?.detail || 'No se pudo mover el pedido.')
+    setOrders(previousOrders)
+  }
+}
 
   const getOrdersByColumn = (columnId) => {
     return orders.filter(o => o.estado === columnId)
@@ -170,6 +195,19 @@ const Board = () => {
                                       {order.items?.length > 2 && (
                                         <p className="text-[10px] text-brand-500 font-bold mt-1">+{order.items.length - 2} productos más</p>
                                       )}
+                                    </div>
+                                    {/* Fecha */}
+                                    <div className="pt-3 mt-3 border-t border-surface-100 flex items-center gap-1.5">
+                                      <Clock className="w-3 h-3 text-gray-400" />
+                                      <span className="text-xs text-gray-400 font-mono">
+                                        {new Date(order.created_at).toLocaleDateString('es-AR', {
+                                          day: '2-digit',
+                                          month: '2-digit',
+                                          year: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
