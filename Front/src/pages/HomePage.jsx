@@ -119,7 +119,7 @@ function Hero() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
             <Link
-              to="/tienda"
+              to="/catalogo"
               className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-xl font-body font-medium transition-colors"
             >
               Ver productos <ArrowRight size={16} />
