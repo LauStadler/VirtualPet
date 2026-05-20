@@ -36,8 +36,8 @@ function Navbar({ cantidadItems, onCartClick, onLoginClick, onLogout }) {
         </Link>
 
         {/* Slogan — oculto en móvil */}
-        <p className="hidden md:block text-sm text-gray-400 italic font-body">
-          "Virtual Pet nunca defraudará a su mascota"
+        <p className="hidden md:block text-sm text-black-400 font-body">
+          Virtual Pet nunca defraudará a su mascota
         </p>
 
         {/* Acciones (se mantiene igual...) */}
