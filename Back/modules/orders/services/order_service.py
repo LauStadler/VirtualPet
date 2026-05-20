@@ -21,6 +21,7 @@ Regla crítica de negocio — atomicidad del checkout:
     falla, la sesión se revierte y no queda ningún dato a medias.
 """
 
+from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
 
 from modules.orders.repositories.order_repository import OrderRepository
@@ -56,7 +57,37 @@ class TransicionEstadoInvalidaError(Exception):
         )
 
 
-class OrderService:
+class IOrderService(ABC):
+    """Interfaz para el servicio de órdenes."""
+
+    @abstractmethod
+    def crear_orden(
+        self,
+        user_id: int,
+        items: list[CheckoutItemDetail],
+        total: float,
+        direccion_entrega: str,
+    ) -> Order:
+        pass
+
+    @abstractmethod
+    def listar_mis_ordenes(self, user_id: int) -> list[OrderSummaryResponse]:
+        pass
+
+    @abstractmethod
+    def obtener_mi_orden(self, order_id: int, user_id: int) -> OrderResponse:
+        pass
+
+    @abstractmethod
+    def listar_todas(self) -> list[BackofficeOrderResponse]:
+        pass
+
+    @abstractmethod
+    def cambiar_estado(self, order_id: int, nuevo_estado: OrderEstado) -> BackofficeOrderResponse:
+        pass
+
+
+class OrderService(IOrderService):
     """Lógica de negocio para creación y gestión del ciclo de vida de órdenes."""
 
     def __init__(self, db: Session) -> None:

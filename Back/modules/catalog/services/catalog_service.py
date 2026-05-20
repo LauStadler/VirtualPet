@@ -11,6 +11,7 @@ por un endpoint HTTP del catálogo.
 """
 
 import math
+from abc import ABC, abstractmethod
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -47,7 +48,31 @@ class StockInsuficienteError(Exception):
         )
 
 
-class CatalogService:
+class ICatalogService(ABC):
+    """Interfaz para el servicio del catálogo de productos."""
+
+    @abstractmethod
+    def listar_productos(self, filtros: ProductFilterParams) -> ProductListResponse:
+        pass
+
+    @abstractmethod
+    def obtener_producto(self, product_id: int) -> ProductDetailResponse:
+        pass
+
+    @abstractmethod
+    def listar_categorias(self) -> list[CategoryResponse]:
+        pass
+
+    @abstractmethod
+    def verificar_stock(self, product_id: int, cantidad: int) -> bool:
+        pass
+
+    @abstractmethod
+    def descontar_stock(self, product_id: int, cantidad: int) -> None:
+        pass
+
+
+class CatalogService(ICatalogService):
     """Lógica de negocio del catálogo de productos."""
 
     def __init__(self, db: Session) -> None:
