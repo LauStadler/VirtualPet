@@ -140,7 +140,7 @@ class SalesService:
 
             items_detallados.append(CheckoutItemDetail(
                 product_id=product.id,
-                nombre_producto=product.nombre,
+                producto_nombre=product.nombre,
                 cantidad=item.cantidad,
                 precio_unitario=precio_unitario,
                 subtotal=subtotal,

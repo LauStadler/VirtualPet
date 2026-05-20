@@ -25,36 +25,28 @@ class OrderEstado(str, enum.Enum):
     El backoffice es responsable de avanzar los estados manualmente.
 
     Flujo esperado:
-        PENDIENTE → EN_PREPARACION → DESPACHADO → EN_CAMINO → ENTREGADO
+        PENDIENTE → PREPARADO → ENVIADO
     """
     PENDIENTE = "pendiente"
     """Orden recién creada, aún no procesada por el depósito."""
 
-    EN_PREPARACION = "en_preparacion"
+    PREPARADO = "preparado"
     """El depósito está armando el paquete."""
 
-    DESPACHADO = "despachado"
-    """El paquete salió del depósito hacia el courier o reparto propio."""
-
-    EN_CAMINO = "en_camino"
-    """El paquete está en camino al domicilio del cliente."""
-
-    ENTREGADO = "entregado"
-    """El paquete fue entregado al cliente. Estado final."""
+    ENVIADO = "enviado"
+    """El paquete salió del depósito hacia el domicilio del cliente."""
 
 
 # Define el orden válido de transiciones de estado.
-# Un estado solo puede avanzar al siguiente en esta lista.
-TRANSICIONES_VALIDAS: dict[OrderEstado, OrderEstado] = {
-    OrderEstado.PENDIENTE:       OrderEstado.EN_PREPARACION,
-    OrderEstado.EN_PREPARACION:  OrderEstado.DESPACHADO,
-    OrderEstado.DESPACHADO:      OrderEstado.EN_CAMINO,
-    OrderEstado.EN_CAMINO:       OrderEstado.ENTREGADO,
+# Ahora permite retroceder en caso de error en el depósito.
+TRANSICIONES_VALIDAS: dict[OrderEstado, list[OrderEstado]] = {
+    OrderEstado.PENDIENTE: [OrderEstado.PREPARADO],
+    OrderEstado.PREPARADO: [OrderEstado.PENDIENTE, OrderEstado.ENVIADO],
+    OrderEstado.ENVIADO: [OrderEstado.PREPARADO],
 }
 """
 Mapa de transiciones válidas de estado.
-ENTREGADO no aparece como clave porque es el estado final — no puede avanzar más.
-Usado por OrderService para validar cambios de estado desde el backoffice.
+Permite avanzar y retroceder entre estados contiguos para corregir errores manuales.
 """
 
 

@@ -63,6 +63,7 @@ class OrderRepository:
                 product_id=item.product_id,
                 cantidad=item.cantidad,
                 precio_unitario=item.precio_unitario,
+                producto_nombre=item.producto_nombre,
                 subtotal=item.subtotal,
             )
             self.db.add(order_item)
@@ -135,7 +136,7 @@ class OrderRepository:
         """
         stmt = (
             select(Order)
-            .options(joinedload(Order.items))
+            .options(joinedload(Order.items), joinedload(Order.user))
             .order_by(Order.created_at.desc())
         )
         return list(self.db.scalars(stmt).unique())

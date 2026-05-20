@@ -19,6 +19,17 @@ class OrderItemResponse(BaseModel):
     cantidad: int
     precio_unitario: float
     subtotal: float
+    producto_nombre: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class UserSummary(BaseModel):
+    """Resumen de datos del cliente para el backoffice."""
+    id: int
+    nombre: str
+    apellido: str
+    email: str
 
     model_config = {"from_attributes": True}
 
@@ -85,5 +96,6 @@ class BackofficeOrderResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     user_id: int
+    user: Optional[UserSummary] = None
 
     model_config = {"from_attributes": True}

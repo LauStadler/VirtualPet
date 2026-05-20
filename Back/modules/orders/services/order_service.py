@@ -192,10 +192,10 @@ class OrderService:
             raise OrdenNoEncontradaError(f"La orden {order_id} no existe.")
 
         estado_actual = OrderEstado(order.estado)
-        transicion_valida = TRANSICIONES_VALIDAS.get(estado_actual)
+        transiciones_permitidas = TRANSICIONES_VALIDAS.get(estado_actual, [])
 
-        # Verificar que la transición solicitada es la correcta para el estado actual
-        if transicion_valida != nuevo_estado:
+        # Verificar que la transición solicitada está permitida para el estado actual
+        if nuevo_estado not in transiciones_permitidas:
             raise TransicionEstadoInvalidaError(estado_actual, nuevo_estado)
 
         order = self.repo.actualizar_estado(order, nuevo_estado)

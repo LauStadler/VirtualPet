@@ -7,7 +7,7 @@ si el ERP actualiza el precio de un producto después, el historial
 de órdenes no se ve afectado.
 """
 
-from sqlalchemy import Column, Integer, Float, ForeignKey
+from sqlalchemy import Column, Integer, Float, ForeignKey, String
 from sqlalchemy.orm import relationship
 from infrastructure.db.base_class import Base
 
@@ -39,6 +39,9 @@ class OrderItem(Base):
     Independiente del precio actual del producto en el catálogo.
     Garantiza que el historial de órdenes sea inmutable.
     """
+
+    producto_nombre = Column(String(200), nullable=True)
+    """Nombre del producto al momento de la compra."""
 
     subtotal = Column(Float, nullable=False)
     """precio_unitario × cantidad. Calculado al crear la orden."""
