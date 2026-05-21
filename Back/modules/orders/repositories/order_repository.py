@@ -33,11 +33,10 @@ class OrderRepository:
         direccion_entrega: str,
     ) -> Order:
         """
-        Crea una nueva orden con sus items en una sola transacción.
+        Crea una nueva orden con sus items.
 
-        Los items se persisten como snapshot de la compra: precio_unitario
-        y subtotal se guardan tal como fueron calculados al momento del checkout,
-        independientemente de cambios futuros en el catálogo.
+        IMPORTANTE: Ya no hace commit(). La transacción debe ser gestionada
+        externamente (ej: en OrderService).
 
         Args:
             user_id: ID del usuario que realiza la compra.
@@ -46,7 +45,7 @@ class OrderRepository:
             direccion_entrega: Dirección ingresada por el cliente.
 
         Returns:
-            La orden recién creada con sus items cargados.
+            La orden recién creada.
         """
         order = Order(
             user_id=user_id,
@@ -55,7 +54,7 @@ class OrderRepository:
             estado=OrderEstado.PENDIENTE,
         )
         self.db.add(order)
-        self.db.flush()  # genera order.id sin hacer commit aún
+        self.db.flush()  # genera order.id necesario para los OrderItems
 
         for item in items:
             order_item = OrderItem(
@@ -68,8 +67,7 @@ class OrderRepository:
             )
             self.db.add(order_item)
 
-        self.db.commit()
-        self.db.refresh(order)
+        self.db.flush()
         return order
 
     def get_by_id(self, order_id: int) -> Optional[Order]:
@@ -144,8 +142,6 @@ class OrderRepository:
     def actualizar_estado(self, order: Order, nuevo_estado: OrderEstado) -> Order:
         """
         Actualiza el estado de una orden.
-        La validación de que la transición es válida se hace en OrderService,
-        no aquí — el repositorio solo persiste el cambio.
 
         Args:
             order: Objeto Order a actualizar.
@@ -155,6 +151,5 @@ class OrderRepository:
             La orden actualizada.
         """
         order.estado = nuevo_estado
-        self.db.commit()
-        self.db.refresh(order)
+        self.db.flush()
         return order

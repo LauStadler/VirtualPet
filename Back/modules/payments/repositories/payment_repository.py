@@ -27,6 +27,9 @@ class PaymentRepository:
         """
         Persiste un nuevo registro de pago en la base de datos.
 
+        IMPORTANTE: Ya no hace commit(). La transacción debe ser gestionada
+        externamente (ej: en OrderService).
+
         Args:
             orden_id: ID de la orden a la que pertenece el pago.
             monto: Monto total cobrado.
@@ -34,7 +37,7 @@ class PaymentRepository:
             metodo: Método de pago utilizado (ej: 'simulado').
 
         Returns:
-            El objeto Payment recién creado con su ID asignado.
+            El objeto Payment recién creado.
         """
         payment = Payment(
             orden_id=orden_id,
@@ -43,8 +46,7 @@ class PaymentRepository:
             metodo=metodo,
         )
         self.db.add(payment)
-        self.db.commit()
-        self.db.refresh(payment)
+        self.db.flush()
         return payment
 
     def get_by_orden_id(self, orden_id: int) -> Optional[Payment]:

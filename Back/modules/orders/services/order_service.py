@@ -106,53 +106,38 @@ class OrderService(IOrderService):
         direccion_entrega: str,
     ) -> Order:
         """
-        Crea una orden, descuenta stock y registra el pago en una sola operación.
+        Crea una orden, descuenta stock y registra el pago en una sola operación atómica.
 
-        Este método es llamado por SalesService al confirmar el checkout.
-        No debe ser llamado directamente desde ningún endpoint HTTP.
-
-        El orden de operaciones es deliberado:
-          1. Crear la orden primero (genera el order_id necesario para el pago)
-          2. Descontar stock de cada item
-          3. Registrar el pago simulado
-
-        Si el descuento de stock falla (otro cliente se adelantó),
-        la sesión se revierte automáticamente y la orden no queda persistida.
-
-        Args:
-            user_id: ID del usuario que realiza la compra.
-            items: Items validados con precios confirmados por SalesService.
-            total: Total de la compra calculado por SalesService.
-            direccion_entrega: Dirección de entrega del cliente.
-
-        Returns:
-            La orden creada en estado PENDIENTE.
-
-        Raises:
-            StockInsuficienteError: Si entre la verificación de SalesService y
-                                    el descuento, otro cliente agotó el stock.
+        Este método es el único responsable de realizar el commit() final.
+        Si cualquier paso falla, se realiza un rollback() para mantener la integridad.
         """
-        # Paso 1: crear la orden y sus items
-        order = self.repo.crear(
-            user_id=user_id,
-            items=items,
-            total=total,
-            direccion_entrega=direccion_entrega,
-        )
+        try:
+            # Paso 1: crear la orden y sus items
+            order = self.repo.crear(
+                user_id=user_id,
+                items=items,
+                total=total,
+                direccion_entrega=direccion_entrega,
+            )
 
-        # Paso 2: descontar stock de cada item
-        # Si falla aquí (caso borde: dos compras simultáneas del último item),
-        # la excepción llega a SalesService y se devuelve 422 al cliente.
-        catalog_service = CatalogService(self.db)
-        for item in items:
-            catalog_service.descontar_stock(item.product_id, item.cantidad)
+            # Paso 2: descontar stock de cada item con bloqueo pesimista
+            catalog_service = CatalogService(self.db)
+            for item in items:
+                # El método descontar_stock ahora usa with_for_update() internamente
+                catalog_service.descontar_stock(item.product_id, item.cantidad)
 
-        # Paso 3: registrar el pago simulado
-        # Import local para evitar circular imports entre módulos
-        from modules.payments.services.payment_service import PaymentService
-        PaymentService(self.db).procesar(orden_id=order.id, monto=total)
+            # Paso 3: registrar el pago simulado
+            from modules.payments.services.payment_service import PaymentService
+            PaymentService(self.db).procesar(orden_id=order.id, monto=total)
 
-        return order
+            # Commit final de toda la unidad de trabajo
+            self.db.commit()
+            self.db.refresh(order)
+            return order
+
+        except Exception as e:
+            self.db.rollback()
+            raise e
 
     def listar_mis_ordenes(self, user_id: int) -> list[OrderSummaryResponse]:
         """
