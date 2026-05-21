@@ -9,90 +9,13 @@
  */
 
 import { useState } from 'react'
-import { ShoppingCart, Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, PawPrint, LogOut, User as UserIcon } from 'lucide-react'
+import { ShoppingCart, Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, PawPrint } from 'lucide-react'
 import { useCatalogo } from '../../hooks/useCatalogo'
 import useCartStore from '../../store/cartStore'
 import useAuthStore from '../../store/authStore'
 import CartDrawer from '../../components/cart/CartDrawer'
-import { Link } from 'react-router-dom' // <-- Asegurate de importar Link al principio del archivo
-
-// ─── Navbar Modificado ────────────────────────────────────────────────────────
-function Navbar({ cantidadItems, onCartClick, onLoginClick, onLogout }) {
-  const { user, isLoggedIn } = useAuthStore()
-  const [showUserMenu, setShowUserMenu] = useState(false)
-
-  return (
-    <header className="sticky top-0 z-40 bg-white border-b border-surface-200 shadow-sm">
-      <div className="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
-        
-        {/* Logo — Link hacia el inicio */}
-        <Link to="/" className="flex items-center gap-2 shrink-0 hover:opacity-90 transition-opacity">
-          <div className="w-8 h-8 bg-brand-500 rounded-xl flex items-center justify-center">
-            <PawPrint size={16} className="text-white" />
-          </div>
-          <span className="font-display text-xl font-bold text-gray-900">
-            Virtual<span className="text-brand-500">Pet</span>
-          </span>
-        </Link>
-
-        {/* Slogan — oculto en móvil */}
-        <p className="hidden md:block text-sm text-black-400 font-body">
-          Virtual Pet nunca defraudará a su mascota
-        </p>
-
-        {/* Acciones (se mantiene igual...) */}
-        <div className="flex items-center gap-3">
-          {isLoggedIn() ? (
-            <div className="relative">
-              <button 
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1 pr-3 hover:bg-surface-100 rounded-xl transition-colors"
-              >
-                <div className="w-8 h-8 bg-surface-200 rounded-lg flex items-center justify-center text-gray-600">
-                  <UserIcon size={16} />
-                </div>
-                <span className="text-sm font-body font-medium text-gray-700 hidden sm:inline">{user?.nombre}</span>
-              </button>
-              
-              {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-surface-200 rounded-xl shadow-xl py-2 z-50">
-                  <button 
-                    onClick={() => { onLogout(); setShowUserMenu(false); }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-body"
-                  >
-                    <LogOut size={16} />
-                    Cerrar sesión
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <button 
-              onClick={onLoginClick}
-              className="text-sm font-body font-medium text-gray-600 hover:text-brand-500 px-3 py-2 transition-colors"
-            >
-              Iniciar sesión
-            </button>
-          )}
-
-          {/* Carrito */}
-          <button
-            onClick={onCartClick}
-            className="relative flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-xl transition-colors font-body font-medium text-sm"
-          >
-            <ShoppingCart size={16} />
-            <span className="hidden sm:inline">Carrito</span>
-            {cantidadItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-gray-900 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-mono">
-                {cantidadItems}
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-    </header>
-  )
-}
+import Navbar from '../../components/Navbar'
+import { Link } from 'react-router-dom'
 
 // ─── Sidebar de filtros ───────────────────────────────────────────────────────
 
@@ -280,7 +203,7 @@ function ProductoCard({ producto, onAgregar }) {
   return (
     <article className="bg-white rounded-2xl border border-surface-200 overflow-hidden group hover:shadow-md hover:border-brand-200 transition-all duration-200 flex flex-col">
       {/* Imagen */}
-      <div className="aspect-square bg-surface-100 relative overflow-hidden">
+      <Link to={`/producto/${producto.id}`} className="aspect-square bg-surface-100 relative overflow-hidden block">
         {producto.imagen_url ? (
           <img
             src={producto.imagen_url}
@@ -302,7 +225,7 @@ function ProductoCard({ producto, onAgregar }) {
             </span>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Info */}
       <div className="p-4 flex flex-col flex-1">
@@ -314,9 +237,11 @@ function ProductoCard({ producto, onAgregar }) {
         )}
 
         {/* Nombre */}
-        <h3 className="font-body font-medium text-gray-900 text-sm leading-snug mb-2 line-clamp-2 flex-1">
-          {producto.nombre}
-        </h3>
+        <Link to={`/producto/${producto.id}`} className="block flex-1 mb-2">
+          <h3 className="font-body font-medium text-gray-900 text-sm leading-snug line-clamp-2 hover:text-brand-500 transition-colors">
+            {producto.nombre}
+          </h3>
+        </Link>
 
         {/* Precio y botón */}
         <div className="flex items-center justify-between mt-3 gap-2">
