@@ -49,11 +49,11 @@ class TransicionEstadoInvalidaError(Exception):
     def __init__(self, estado_actual: OrderEstado, estado_solicitado: OrderEstado) -> None:
         self.estado_actual = estado_actual
         self.estado_solicitado = estado_solicitado
-        siguiente = TRANSICIONES_VALIDAS.get(estado_actual)
-        siguiente_str = siguiente.value if siguiente else "ninguno (estado final)"
+        siguientes = TRANSICIONES_VALIDAS.get(estado_actual, [])
+        siguientes_str = ", ".join([s.value for s in siguientes]) if siguientes else "ninguno (estado final)"
         super().__init__(
             f"No se puede cambiar de '{estado_actual.value}' a '{estado_solicitado.value}'. "
-            f"El siguiente estado válido desde '{estado_actual.value}' es: {siguiente_str}."
+            f"Los siguientes estados válidos desde '{estado_actual.value}' son: {siguientes_str}."
         )
 
 
@@ -225,7 +225,10 @@ class OrderService(IOrderService):
 
         # Verificar que la transición solicitada está permitida para el estado actual
         if nuevo_estado not in transiciones_permitidas:
+            print(f"DEBUG: Transition conflict for order {order_id}. Actual: {estado_actual}, Requested: {nuevo_estado}, Valid: {transiciones_permitidas}")
             raise TransicionEstadoInvalidaError(estado_actual, nuevo_estado)
 
         order = self.repo.actualizar_estado(order, nuevo_estado)
+        self.db.commit()
+        self.db.refresh(order)
         return BackofficeOrderResponse.model_validate(order)

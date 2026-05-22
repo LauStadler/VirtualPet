@@ -38,9 +38,10 @@ class OrderEstado(str, enum.Enum):
 
 
 # Define el orden válido de transiciones de estado.
-TRANSICIONES_VALIDAS: dict[OrderEstado, OrderEstado] = {
-    OrderEstado.PENDIENTE:  OrderEstado.PREPARADO,
-    OrderEstado.PREPARADO:  OrderEstado.ENVIADO,
+TRANSICIONES_VALIDAS: dict[OrderEstado, list[OrderEstado]] = {
+    OrderEstado.PENDIENTE: [OrderEstado.PREPARADO],
+    OrderEstado.PREPARADO: [OrderEstado.PENDIENTE, OrderEstado.ENVIADO],
+    OrderEstado.ENVIADO:   [OrderEstado.PREPARADO],
 }
 """
 Mapa de transiciones válidas de estado.
