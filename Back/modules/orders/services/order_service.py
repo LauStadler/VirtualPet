@@ -83,6 +83,10 @@ class IOrderService(ABC):
         pass
 
     @abstractmethod
+    def obtener_una_backoffice(self, order_id: int) -> BackofficeOrderResponse:
+        pass
+
+    @abstractmethod
     def cambiar_estado(self, order_id: int, nuevo_estado: OrderEstado) -> BackofficeOrderResponse:
         pass
 
@@ -183,6 +187,15 @@ class OrderService(IOrderService):
         """
         orders = self.repo.list_all()
         return [BackofficeOrderResponse.model_validate(o) for o in orders]
+
+    def obtener_una_backoffice(self, order_id: int) -> BackofficeOrderResponse:
+        """
+        Retorna el detalle de una orden con el formato extendido para backoffice.
+        """
+        order = self.repo.get_by_id(order_id)
+        if order is None:
+            raise OrdenNoEncontradaError(f"La orden {order_id} no existe.")
+        return BackofficeOrderResponse.model_validate(order)
 
     def cambiar_estado(self, order_id: int, nuevo_estado: OrderEstado) -> BackofficeOrderResponse:
         """

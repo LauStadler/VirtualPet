@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24hs
 
     # CORS
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:5173","http://localhost:3000"]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:5173","http://localhost:5174","http://localhost:3000"]
 
     # AWS S3 (imágenes — configurar cuando corresponda)
     AWS_REGION: str = "sa-east-1"

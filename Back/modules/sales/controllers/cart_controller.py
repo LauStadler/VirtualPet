@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from shared.dependencies.database import get_db
 from shared.dependencies.auth import get_current_user
+from shared.utils.websocket_manager import manager
 from modules.sales.services.sales_service import SalesService, ProductoInvalidoError
 from modules.catalog.services.catalog_service import StockInsuficienteError
 from modules.sales.schemas.sales_schema import CheckoutRequest, CheckoutResponse
@@ -34,7 +35,7 @@ router = APIRouter()
         "Requiere autenticación — solo clientes pueden comprar."
     ),
 )
-def checkout(
+async def checkout(
     body: CheckoutRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -53,7 +54,23 @@ def checkout(
     service = SalesService(db)
 
     try:
-        return service.checkout(datos=body, user_id=current_user.id)
+        response = service.checkout(datos=body, user_id=current_user.id)
+
+        # Notificar al backoffice vía WebSocket que hay un nuevo pedido
+        try:
+            print(f"Broadcasting new order {response.orden_id}...")
+            from modules.orders.services.order_service import OrderService
+            order_service = OrderService(db)
+            full_order_data = order_service.obtener_una_backoffice(response.orden_id)
+            await manager.broadcast({
+                "type": "order_created",
+                "order": full_order_data.model_dump(mode='json')
+            })
+            print("Broadcast sent successfully")
+        except Exception as e:
+            print(f"Error broadcasting new order: {e}")
+
+        return response
 
     except ProductoInvalidoError as e:
         raise HTTPException(

@@ -13,11 +13,12 @@ Endpoints:
     PATCH /backoffice/orders/{id}/estado → avanzar estado de una orden
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from shared.dependencies.database import get_db
 from shared.dependencies.auth import require_role
+from shared.utils.websocket_manager import manager
 from modules.orders.services.order_service import (
     OrderService,
     OrdenNoEncontradaError,
@@ -30,6 +31,22 @@ router = APIRouter()
 
 # Dependencia reutilizable para todos los endpoints del backoffice
 _requiere_deposito_o_admin = Depends(require_role(UserRole.DEPOSITO, UserRole.ADMIN))
+
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    print("New WS connection attempt...")
+    await manager.connect(websocket)
+    try:
+        while True:
+            # Mantener la conexión abierta
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        print("WS Client disconnected via WebSocketDisconnect")
+        manager.disconnect(websocket)
+    except Exception as e:
+        print(f"WS Unexpected error: {e}")
+        manager.disconnect(websocket)
 
 
 @router.get(
@@ -83,7 +100,7 @@ def get_order(
         "Flujo: pendiente → en_preparacion → despachado → en_camino → entregado."
     ),
 )
-def cambiar_estado(
+async def cambiar_estado(
     order_id: int,
     body: CambiarEstadoRequest,
     db: Session = Depends(get_db),
@@ -97,7 +114,13 @@ def cambiar_estado(
     """
     service = OrderService(db)
     try:
-        return service.cambiar_estado(order_id=order_id, nuevo_estado=body.estado)
+        order = service.cambiar_estado(order_id=order_id, nuevo_estado=body.estado)
+        # Notificar vía WebSocket
+        await manager.broadcast({
+            "type": "order_updated",
+            "order": order.model_dump(mode='json')
+        })
+        return order
     except OrdenNoEncontradaError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except TransicionEstadoInvalidaError as e:

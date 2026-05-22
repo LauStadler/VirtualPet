@@ -95,16 +95,14 @@ class CatalogRepository:
         if solo_con_stock:
             stmt = stmt.join(Product.stock).where(Stock.cantidad > 0)
 
-        # 1. Conteo total optimizado (sin subquery de ser posible)
-        count_stmt = select(func.count(Product.id)).select_from(stmt.join_from(Product, Stock) if solo_con_stock else Product).where(Product.activo == True)
-        
-        # Refinamos el conteo con los mismos filtros
+        # 1. Conteo total (Query independiente para evitar colisiones de joins/aliases)
+        count_stmt = select(func.count(Product.id)).where(Product.activo == True)
         if busqueda:
             count_stmt = count_stmt.where(or_(Product.nombre.ilike(f"%{busqueda}%"), Product.descripcion.ilike(f"%{busqueda}%")))
         if categoria_id:
             count_stmt = count_stmt.where(Product.category_id.in_(all_category_ids))
         if solo_con_stock:
-            count_stmt = count_stmt.where(Stock.cantidad > 0)
+            count_stmt = count_stmt.join(Product.stock).where(Stock.cantidad > 0)
 
         total = self.db.scalar(count_stmt) or 0
 

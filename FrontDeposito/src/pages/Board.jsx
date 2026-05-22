@@ -29,6 +29,66 @@ const Board = () => {
 
   useEffect(() => {
     fetchOrders()
+
+    // Configurar WebSocket
+    let socket
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+    const wsUrl = baseUrl.replace('http', 'ws') + '/backoffice/ws'
+    
+    const connectWS = () => {
+      // Intentar obtener la URL base de la API, o usar el host actual si no está definida
+      const apiBase = import.meta.env.VITE_API_URL
+      let wsUrl
+      
+      if (apiBase) {
+        const cleanBase = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase
+        wsUrl = cleanBase.replace(/^http/, 'ws') + '/backoffice/ws'
+      } else {
+        // Si no hay VITE_API_URL, asumimos que el backend está en el mismo host pero puerto 8000
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        const host = window.location.hostname
+        wsUrl = `${protocol}//${host}:8000/backoffice/ws`
+      }
+      
+      console.log('Attempting WS connection to:', wsUrl)
+      socket = new WebSocket(wsUrl)
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        console.log('WS Message Received:', data)
+
+        if (data.type === 'order_created') {
+          console.log('Adding new order to board:', data.order)
+          setOrders(prev => {
+            if (prev.some(o => o.id === data.order.id)) return prev
+            return [data.order, ...prev]
+          })
+        } else if (data.type === 'order_updated') {
+          console.log('Updating existing order:', data.order)
+          setOrders(prev => prev.map(o => o.id === data.order.id ? data.order : o))
+          setSelectedOrder(prev => (prev?.id === data.order.id ? data.order : prev))
+        }
+      }
+
+      socket.onclose = (e) => {
+        console.log('WS Connection closed:', e.reason)
+      }
+
+      socket.onerror = (err) => {
+        console.error('WS Error:', err)
+      }
+    }
+
+    connectWS()
+
+    return () => {
+      if (socket) {
+        // Solo cerramos si el socket está en un estado que permite cerrar
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+          socket.close()
+        }
+      }
+    }
   }, [])
 
 const onDragEnd = async (result) => {
